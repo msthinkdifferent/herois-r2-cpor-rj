@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heróis R2 da 2ª Guerra — Palestra e Exposição no CPOR-RJ</title>
+<meta name="description" content="Palestra do Ten Monteiro sobre os heróis R2 da 2ª Guerra Mundial e exposição do acervo de Omar Bandeira Ramidan Sobrinho no CPOR-RJ.">
+<meta property="og:title" content="Heróis R2 da 2ª Guerra — CPOR-RJ">
+<meta property="og:description" content="Palestra e exposição do acervo de Omar Bandeira Ramidan Sobrinho.">
+<meta property="og:image" content="slide01.jpg">
+<style>
+  html,body{margin:0;height:100%;background:#0e110a;overflow:hidden;font-family:Arial,sans-serif}
+  #stage{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+  #frame{position:relative;aspect-ratio:16/9;width:min(100vw,calc(100vh*16/9));background:#1c2214}
+  #frame img.slide{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+  #frame video{position:absolute;object-fit:cover;background:#000}
+  .nav{position:absolute;top:0;bottom:0;width:18%;cursor:pointer;z-index:2}
+  #prev{left:0} #next{right:0}
+  #bar{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;gap:10px;align-items:center;padding:10px;
+       background:linear-gradient(transparent,rgba(0,0,0,.7));color:#eee8d4;font-size:14px;opacity:0;transition:opacity .3s;z-index:3}
+  body:hover #bar,#bar.show{opacity:1}
+  #bar button{background:#c9a23c;color:#1c2214;border:0;border-radius:4px;padding:8px 14px;font-weight:bold;cursor:pointer;font-size:14px}
+  #start{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+         background:rgba(14,17,10,.85);color:#eee8d4;z-index:5;cursor:pointer;text-align:center;padding:20px}
+  #start b{font-size:clamp(22px,4vw,40px);letter-spacing:2px}
+  #start span{background:#c9a23c;color:#1c2214;padding:14px 28px;border-radius:6px;font-weight:bold;font-size:18px}
+</style>
+</head>
+<body>
+<div id="stage"><div id="frame">
+  <img class="slide" id="img" alt="">
+  <div class="nav" id="prev"></div><div class="nav" id="next"></div>
+</div></div>
+<div id="bar">
+  <button id="bPrev">◀</button><span id="count"></span><button id="bNext">▶</button>
+  <button id="bFull">Tela cheia</button>
+</div>
+<div id="start"><b>HERÓIS R2 DA 2ª GUERRA MUNDIAL</b><div>Palestra e exposição no CPOR-RJ</div><span>▶ Iniciar apresentação</span><small>Use as setas do teclado ou toque nas laterais para avançar</small></div>
+<script>
+fetch('slides.json').then(r=>r.json()).then(S=>{
+  const img=document.getElementById('img'),frame=document.getElementById('frame'),count=document.getElementById('count');
+  let i=0,vid=null;
+  const start=location.hash.match(/\d+/); if(start) i=Math.min(S.length-1,Math.max(0,+start[0]-1));
+  S.forEach(s=>{const p=new Image();p.src=s.img;});
+  function show(n){
+    i=Math.max(0,Math.min(S.length-1,n));
+    const s=S[i]; img.src=s.img; count.textContent=(i+1)+' / '+S.length;
+    history.replaceState(null,'','#'+(i+1));
+    if(vid){vid.pause();vid.remove();vid=null;}
+    if(s.video){
+      vid=document.createElement('video');
+      Object.assign(vid,{src:s.video,autoplay:true,loop:true,playsInline:true,controls:false});
+      const [x,y,w,h]=s.box; Object.assign(vid.style,{left:x+'%',top:y+'%',width:w+'%',height:h+'%'});
+      vid.addEventListener('click',e=>{e.stopPropagation();vid.paused?vid.play():vid.pause();});
+      frame.appendChild(vid);
+      vid.play().catch(()=>{vid.muted=true;vid.play();});
+    }
+  }
+  const go=d=>show(i+d);
+  document.getElementById('next').onclick=document.getElementById('bNext').onclick=()=>go(1);
+  document.getElementById('prev').onclick=document.getElementById('bPrev').onclick=()=>go(-1);
+  document.getElementById('bFull').onclick=()=>document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();
+  addEventListener('keydown',e=>{
+    if(['ArrowRight','PageDown',' ','Enter'].includes(e.key)){e.preventDefault();go(1);}
+    if(['ArrowLeft','PageUp','Backspace'].includes(e.key)){e.preventDefault();go(-1);}
+    if(e.key==='f'||e.key==='F') document.getElementById('bFull').click();
+  });
+  let tx=null;addEventListener('touchstart',e=>tx=e.touches[0].clientX);
+  addEventListener('touchend',e=>{if(tx===null)return;const d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50)go(d<0?1:-1);tx=null;});
+  document.getElementById('start').onclick=function(){
+    this.remove();
+    const el=document.documentElement; if(el.requestFullscreen) el.requestFullscreen().catch(()=>{});
+    show(i);
+  };
+  img.src=S[i].img; count.textContent=(i+1)+' / '+S.length;
+});
+</script>
+</body>
+</html>
